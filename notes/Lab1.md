@@ -14,7 +14,7 @@
 
 ### The PC's Physical Address Space
 
-<img src="/Users/hiimswindler/Library/Application Support/typora-user-images/image-20240115143613777.png" alt="image-20240115143613777" style="zoom:75%;" />
+<img src="./img/addr_space.png" alt="image-20240115143613777" style="zoom:75%;" />
 
 #### 16-bit Intel 8088 processor
 
