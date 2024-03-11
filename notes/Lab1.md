@@ -190,6 +190,7 @@ bootmain(void)
 	// load each program segment (ignores ph flags)
 	// ELF segments: Text/Data/BSS/Others
 	ph = (struct Proghdr *) ((uint8_t *) ELFHDR + ELFHDR->e_phoff);
+  // program header numbers
 	eph = ph + ELFHDR->e_phnum;
 	for (; ph < eph; ph++)
 		// load kernel code
@@ -335,3 +336,47 @@ struct Proghdr {
 - `.bss`: The bss secotion immediately follows the `.data` section, and it reserves space for uninitialized global variables like `int x;`
 
 Use `objdump -h` to check header information, look at the **VMA** (or link address) and the **LMA** (or load address) of each section. The LMA specifies the memory address at which this section should be loaded to the memory. The link address specifies the memory from which this section should be executed (entry point). 
+
+**Examine the 8 words of memory at 0x00100000 at the point the BIOS enters the boot loader, and then again at the point the boot loader enters the kernel. Why are they different?**
+
+```bash
+(gdb) b *0x7c00
+Breakpoint 1 at 0x7c00
+(gdb) b *0x7d6b
+Breakpoint 2 at 0x7d6b
+(gdb) c
+Continuing.
+[   0:7c00] => 0x7c00:	cli    
+
+Breakpoint 1, 0x00007c00 in ?? ()
+(gdb) x/8x 0x100000
+0x100000:	0x00000000	0x00000000	0x00000000	0x00000000
+0x100010:	0x00000000	0x00000000	0x00000000	0x00000000
+(gdb) c
+Continuing.
+The target architecture is assumed to be i386
+=> 0x7d6b:	call   *0x10018
+
+Breakpoint 2, 0x00007d6b in ?? ()
+(gdb) x/8x 0x100000
+0x100000:	0x1badb002	0x00000000	0xe4524ffe	0x7205c766
+0x100010:	0x34000004	0x2000b812	0x220f0011	0xc0200fd8
+```
+
+At the point the BIOS enters the boot loader, the kernel hasn't been loaded thus the words in `0x100000` are 0. Given the load address of the kernel below (i.e., LMA), the kernel will be loaded to `0x100000`, thus at the point the boot loader enters the kernel where kernel has already been loaded in `void bootmain()` the words at `0x100000` are set.
+
+```bash
+$ objdump -h obj/kern/kernel
+
+obj/kern/kernel:     file format elf32-i386
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .text         000019e9  f0100000  00100000  00001000  2**4
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+```
+
+
+
+## Part 3: The Kernel
+
